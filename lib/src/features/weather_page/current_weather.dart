@@ -7,6 +7,7 @@ import 'package:open_weather_example_flutter/src/features/weather_page/weather_i
 
 class CurrentWeather extends ConsumerWidget {
   const CurrentWeather({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weatherDataValue = ref.watch(currentWeatherControllerProvider);
@@ -14,7 +15,27 @@ class CurrentWeather extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(city, style: Theme.of(context).textTheme.headline4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.location_pin,
+              color: Colors.white,
+              size: 16.0,
+            ),
+            GestureDetector(
+                onTap: (){
+                  print("Container clicked");
+                },
+                child: Text(city,
+                    style: Theme.of(context).textTheme.headline6!.copyWith(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.normal))
+            )
+
+          ],
+        ),
         weatherDataValue.when(
           data: (weatherData) => CurrentWeatherContents(data: weatherData),
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -37,13 +58,37 @@ class CurrentWeatherContents extends ConsumerWidget {
     final temp = data.temp.celsius.toInt().toString();
     final minTemp = data.minTemp.celsius.toInt().toString();
     final maxTemp = data.maxTemp.celsius.toInt().toString();
-    final highAndLow = 'H:$maxTemp° L:$minTemp°';
+    final highAndLow = '$maxTemp°/ $minTemp°';
+    final condition = data.description;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        WeatherIconImage(iconUrl: data.iconUrl, size: 120),
-        Text(temp, style: textTheme.headline2),
-        Text(highAndLow, style: textTheme.bodyText2),
+        const Padding(
+          padding: EdgeInsets.all(30.0),
+        ),
+        ConstrainedBox(
+          constraints: BoxConstraints.tight(const Size(double.infinity, 128)),
+          child: Stack(
+            alignment: AlignmentDirectional.center,
+            children: <Widget>[
+              Positioned(
+                top: 0.0,
+                child: Text(temp,
+                    style: textTheme.headline1!
+                        .copyWith(fontWeight: FontWeight.w300)),
+              ),
+              Positioned(
+                  top: 20,
+                  right: 110,
+                  child: Text("°c", style: textTheme.bodyText2)),
+            ],
+          ),
+        ),
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          WeatherIconImage(iconUrl: data.iconUrl, size: 60),
+          Text(condition, style: textTheme.headline5)
+        ]),
+        Text(highAndLow, style: textTheme.subtitle1),
       ],
     );
   }

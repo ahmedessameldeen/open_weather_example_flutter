@@ -5,6 +5,8 @@ import 'package:open_weather_example_flutter/src/entities/weather/weather_data.d
 import 'package:open_weather_example_flutter/src/features/weather_page/hourly_weather_controller.dart';
 import 'package:open_weather_example_flutter/src/features/weather_page/weather_icon_image.dart';
 
+import 'suggested_places.dart';
+
 class HourlyWeather extends ConsumerWidget {
   const HourlyWeather({Key? key}) : super(key: key);
 
@@ -14,7 +16,7 @@ class HourlyWeather extends ConsumerWidget {
     return forecastDataValue.when(
       data: (forecastData) {
         // API returns data points in 3-hour intervals -> 1 day = 8 intervals
-        final items = [0, 8, 16, 24, 32];
+        final items = [8, 16, 24, 32, 39];
         return HourlyWeatherRow(
           weatherDataItems: [
             for (var i in items) forecastData.list[i],
@@ -34,12 +36,23 @@ class HourlyWeatherRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: weatherDataItems
-          .map((data) => HourlyWeatherItem(data: data))
-          .toList(),
-    );
+    return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 16.0, bottom: 16),
+            child: Text("Next 7 days"),
+          ),
+          SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: weatherDataItems
+                    .map((data) => HourlyWeatherItem(data: data))
+                    .toList(),
+              ))
+        ]);
   }
 }
 
@@ -51,23 +64,75 @@ class HourlyWeatherItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     const fontWeight = FontWeight.normal;
-    final temp = data.temp.celsius.toInt().toString();
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            DateFormat.E().format(data.date),
-            style: textTheme.caption!.copyWith(fontWeight: fontWeight),
-          ),
-          const SizedBox(height: 8),
-          WeatherIconImage(iconUrl: data.iconUrl, size: 48),
-          const SizedBox(height: 8),
-          Text(
-            '$temp°',
-            style: textTheme.bodyText1!.copyWith(fontWeight: fontWeight),
-          ),
-        ],
-      ),
-    );
+    final minTemp = data.minTemp.celsius.toInt().toString();
+    final maxTemp = data.maxTemp.celsius.toInt().toString();
+    final highAndLow = '$maxTemp°/ $minTemp°';
+
+    String titleText() {
+      if (data.date.isTomorrow) {
+        return 'Tomorrow';
+      } else {
+        return DateFormat.EEEE().format(data.date);
+      }
+    }
+
+    return Padding(
+        padding: const EdgeInsets.only(left: 16.0),
+        child: rectShapeContainer(Column(
+          children: [
+            IntrinsicHeight(
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(
+                titleText(),
+                style:
+                    textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(width: 3),
+              Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Text(
+                    DateFormat.d().addPattern('/').add_M().format(data.date),
+                    style: textTheme.labelSmall!.copyWith(
+                      fontWeight: fontWeight,
+                      color: Colors.white,
+                      letterSpacing: 0,
+                    ),
+                  )),
+            ])),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              WeatherIconImage(iconUrl: data.iconUrl, size: 48),
+              const SizedBox(height: 8),
+              Container(
+                margin: const EdgeInsets.only(top: 8),
+                child: Text(
+                  highAndLow,
+                  style: textTheme.bodyText1!.copyWith(fontWeight: fontWeight),
+                ),
+              ),
+            ])
+          ],
+        ),const EdgeInsets.only(left: 16.0,right: 16,top: 12),10.0));
+  }
+}
+
+extension DateUtils on DateTime {
+  bool get isToday {
+    final now = DateTime.now();
+    return now.day == day && now.month == month && now.year == year;
+  }
+
+  bool get isTomorrow {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    return tomorrow.day == day &&
+        tomorrow.month == month &&
+        tomorrow.year == year;
+  }
+
+  bool get isYesterday {
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    return yesterday.day == day &&
+        yesterday.month == month &&
+        yesterday.year == year;
   }
 }
