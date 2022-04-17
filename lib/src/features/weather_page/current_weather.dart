@@ -3,10 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_weather_example_flutter/src/entities/weather/weather_data.dart';
 import 'package:open_weather_example_flutter/src/features/weather_page/city_search_box.dart';
 import 'package:open_weather_example_flutter/src/features/weather_page/current_weather_controller.dart';
+import 'package:open_weather_example_flutter/src/features/weather_page/suggested_places.dart';
 import 'package:open_weather_example_flutter/src/features/weather_page/weather_icon_image.dart';
 
 class CurrentWeather extends ConsumerWidget {
-  const CurrentWeather({Key? key}) : super(key: key);
+  CurrentWeather(this.onNextClicked, this.onPreviousClicked, {Key? key})
+      : super(key: key);
+
+  final Function onNextClicked;
+  final Function onPreviousClicked;
+
+  var previousEnabled = false;
+  var nextEnabled = true;
+
+  var searchVisibility = false;
+  var selectedCityVisibility = true;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,23 +35,71 @@ class CurrentWeather extends ConsumerWidget {
               size: 16.0,
             ),
             GestureDetector(
-                onTap: (){
-                  print("Container clicked");
+                onTap: () {
+                  selectedCityVisibility = !selectedCityVisibility;
                 },
-                child: Text(city,
-                    style: Theme.of(context).textTheme.headline6!.copyWith(
-                        fontSize: 18,
-                        color: Colors.white,
-                        fontWeight: FontWeight.normal))
-            )
-
+                child: Visibility(
+                    visible: selectedCityVisibility,
+                    child: Text(city,
+                        style: Theme.of(context).textTheme.headline6!.copyWith(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.normal))))
           ],
         ),
-        weatherDataValue.when(
-          data: (weatherData) => CurrentWeatherContents(data: weatherData),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, __) => Text(e.toString()),
-        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+                onTap: () {
+                  // if (previousEnabled) {
+                  onPreviousClicked();
+                  // }
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(left: 24, top: 100),
+                  child: rectShapeContainer(
+                      const Align(
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.keyboard_arrow_left_rounded,
+                          color: Colors.white,
+                          size: 24.0,
+                        ),
+                      ),
+                      const EdgeInsets.all(12.0),
+                      24.0),
+                )),
+            Flexible(
+              child: weatherDataValue.when(
+                data: (weatherData) =>
+                    CurrentWeatherContents(data: weatherData),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, __) => Text(e.toString()),
+              ),
+            ),
+            GestureDetector(
+                onTap: () {
+                  // if (nextEnabled) {
+                  onNextClicked();
+                  // }
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 24, top: 100),
+                  child: rectShapeContainer(
+                      const Align(
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.keyboard_arrow_right_rounded,
+                          color: Colors.white,
+                          size: 24.0,
+                        ),
+                      ),
+                      const EdgeInsets.all(12.0),
+                      24.0),
+                ))
+          ],
+        )
       ],
     );
   }
@@ -91,5 +150,15 @@ class CurrentWeatherContents extends ConsumerWidget {
         Text(highAndLow, style: textTheme.subtitle1),
       ],
     );
+  }
+}
+
+
+class GlobalState extends ChangeNotifier{
+  String _name = 'Hello';
+  String get getName => _name;
+  void setName(String value){
+    _name = value;
+    notifyListeners();
   }
 }
